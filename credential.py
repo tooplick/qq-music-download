@@ -1,4 +1,4 @@
-1#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 QQ音乐凭证管理工具
 功能：登录、检查凭证状态、手动刷新凭证、凭证管理、导出凭证
@@ -61,6 +61,7 @@ class CredentialManager:
 
         # 获取二维码
         qr = await get_qrcode(qr_type)
+        qr_img_path = Path("qqmusic_qrcode.png")
 
         try:
             img = Image.open(BytesIO(qr.data))
@@ -70,7 +71,6 @@ class CredentialManager:
             url = result[0].data.decode("utf-8")
 
             # 保存二维码图片到当前目录，方便用户手动打开扫码
-            qr_img_path = Path("qqmusic_qrcode.png")
             img.save(str(qr_img_path))
             print(f"\n二维码图片已保存至: {qr_img_path.absolute()}")
             print("如终端二维码无法扫描，请手动打开上述图片文件扫码\n")
@@ -89,29 +89,26 @@ class CredentialManager:
 
         # 轮询二维码状态
         credential = None
-        qr_img_path = Path("qqmusic_qrcode.png")
-        while True:
-            event, credential = await check_qrcode(qr)
-            print(f"二维码状态: {event.name}")
-            if event == QRCodeLoginEvents.DONE:
-                print(f"登录成功! 用户ID: {credential.musicid if hasattr(credential, 'musicid') else '未知'}")
-                self.credential = credential
-                self.save_credential()
-                # 删除二维码图片
-                if qr_img_path.exists():
-                    qr_img_path.unlink()
-                return credential
-            elif event == QRCodeLoginEvents.TIMEOUT:
-                print("二维码过期，请重新运行程序")
-                if qr_img_path.exists():
-                    qr_img_path.unlink()
-                return None
-            elif event == QRCodeLoginEvents.REFUSE:
-                print("拒绝登录，请重新扫码")
-                if qr_img_path.exists():
-                    qr_img_path.unlink()
-                return None
-            await asyncio.sleep(2)
+        try:
+            while True:
+                event, credential = await check_qrcode(qr)
+                print(f"二维码状态: {event.name}")
+                if event == QRCodeLoginEvents.DONE:
+                    print(f"登录成功! 用户ID: {credential.musicid if hasattr(credential, 'musicid') else '未知'}")
+                    self.credential = credential
+                    self.save_credential()
+                    return credential
+                elif event == QRCodeLoginEvents.TIMEOUT:
+                    print("二维码过期，请重新运行程序")
+                    return None
+                elif event == QRCodeLoginEvents.REFUSE:
+                    print("拒绝登录，请重新扫码")
+                    return None
+                await asyncio.sleep(2)
+        finally:
+            # 统一清理二维码图片
+            if qr_img_path.exists():
+                qr_img_path.unlink()
 
     async def check_status(self) -> bool:
         """检查凭证状态"""
