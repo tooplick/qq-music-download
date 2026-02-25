@@ -270,6 +270,7 @@ async def main():
 
     # 凭证管理菜单
     while True:
+        print("版本号: v2.3.1")
         print("\n请选择操作:")
         print("1. 检查凭证状态")
         print("2. 手动刷新凭证")

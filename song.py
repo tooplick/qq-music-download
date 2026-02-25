@@ -702,7 +702,7 @@ class InteractiveInterface:
     async def run(self):
         """运行交互界面"""
         print("QQ音乐单曲下载")
-        print("版本号: v2.3.0")
+        print("版本号: v2.3.1")
 
         # 初始化下载器
         await self.downloader.initialize()
